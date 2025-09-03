@@ -3,7 +3,7 @@ name: Deploy to EC2
 on:
   push:
     branches:
-      - main  # main 브랜치에 push될 때 동작
+      - main  # main 브랜치에 push될 때만 동작
 
 jobs:
   build-and-deploy:
@@ -18,11 +18,11 @@ jobs:
       REMOTE_DIR: /home/ec2-user/apps
 
     steps:
-      # 1. 소스코드 체크아웃
+      # 1. 코드 체크아웃
       - name: Checkout source
         uses: actions/checkout@v3
 
-      # 2. JDK 설치
+      # 2. JDK 설정
       - name: Set up JDK 21
         uses: actions/setup-java@v3
         with:
@@ -35,11 +35,15 @@ jobs:
         with:
           gradle-version: '8.3'
 
-      # 4. Gradle로 빌드
-      - name: Build with Gradle
-        run: gradle clean build -x test
+      # 4. 🧹 Gradle 캐시 삭제 (에러 방지)
+      - name: Clean Gradle cache
+        run: rm -rf ~/.gradle/caches/
 
-      # 5. EC2로 JAR 복사
+      # 5. 빌드 실행
+      - name: Build with Gradle
+        run: gradle clean build -x test --no-build-cache
+
+      # 6. EC2로 JAR 복사
       - name: Copy jar to EC2
         uses: appleboy/scp-action@v0.1.4
         with:
@@ -50,7 +54,7 @@ jobs:
           source: build/libs/${{ env.JAR_NAME }}
           target: ${{ env.REMOTE_DIR }}
 
-      # 6. EC2에서 애플리케이션 재시작
+      # 7. EC2에서 앱 재시작
       - name: Restart application on EC2
         uses: appleboy/ssh-action@v0.1.5
         with:
