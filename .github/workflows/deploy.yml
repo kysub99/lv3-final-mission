@@ -16,6 +16,7 @@ jobs:
 
       - name: Deploy application
         run: |
+          echo "${{ secrets.APPLICATION_PROD }}" > /home/ec2-user/application-prod.yml
           JAR_NAME=$(ls build/libs/*.jar | head -n 1)
           cp $JAR_NAME /home/ec2-user/app.jar
           sudo systemctl restart myapp.service
